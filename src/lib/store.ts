@@ -24,6 +24,36 @@ export const INCOME_CATEGORIES: Category[] = [
   "salary", "freelance", "investment", "other",
 ];
 
+export const CATEGORY_ICONS: Record<Category, string> = {
+  food: "🍔",
+  rent: "🏠",
+  transport: "🚗",
+  entertainment: "🎬",
+  utilities: "💡",
+  shopping: "🛍️",
+  health: "🏥",
+  education: "📚",
+  salary: "💰",
+  freelance: "💻",
+  investment: "📈",
+  other: "📌",
+};
+
+export const CATEGORY_COLORS: Record<Category, string> = {
+  food: "#3B82F6",
+  rent: "#6366F1",
+  transport: "#F59E0B",
+  entertainment: "#EC4899",
+  utilities: "#8B5CF6",
+  shopping: "#14B8A6",
+  health: "#EF4444",
+  education: "#06B6D4",
+  salary: "#22C55E",
+  freelance: "#3B82F6",
+  investment: "#F59E0B",
+  other: "#94A3B8",
+};
+
 export interface Transaction {
   _id?: string;
   amount: number;
@@ -34,8 +64,10 @@ export interface Transaction {
   recurring?: boolean;
 }
 
-// ✅ FINAL API (with env support)
-const API = import.meta.env.VITE_API_URL || "https://expense-backend-37bi.onrender.com";
+// ✅ FINAL API (USE THIS ONLY)
+const API = "https://expense-backend-37bi.onrender.com";
+
+// ================= TRANSACTIONS =================
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -107,4 +139,31 @@ export function useTransactions() {
   }, []);
 
   return { transactions, addTransaction, deleteTransaction, updateTransaction };
+}
+
+// ================= BUDGETS =================
+
+export interface Budget {
+  id: string;
+  category: Category;
+  limit: number;
+  month: string;
+}
+
+export function useBudgets() {
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+
+  const addBudget = (bg: Omit<Budget, "id">) => {
+    setBudgets(prev => [...prev, { ...bg, id: `b-${Date.now()}` }]);
+  };
+
+  const updateBudget = (id: string, data: Partial<Budget>) => {
+    setBudgets(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
+  };
+
+  const deleteBudget = (id: string) => {
+    setBudgets(prev => prev.filter(b => b.id !== id));
+  };
+
+  return { budgets, addBudget, updateBudget, deleteBudget };
 }
