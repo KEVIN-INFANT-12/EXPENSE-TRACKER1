@@ -47,7 +47,7 @@ export interface Transaction {
 }
 
 // 🔥 BACKEND API URL
-const API = "http://localhost:5000";
+const API = "https://expense-backend-37bi.onrender.com";
 
 // ================= TRANSACTIONS =================
 
