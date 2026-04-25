@@ -7,48 +7,51 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-// ✅ Schema
 const transactionSchema = new mongoose.Schema({
   type: String,
   amount: Number,
   category: String,
   notes: String,
   date: String,
+  userId: String,
 });
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
-// ✅ TEST ROUTE
+// TEST
 app.get("/", (req, res) => {
   res.send("API running");
 });
 
-// ✅ GET ALL TRANSACTIONS
-app.get("/transactions", async (req, res) => {
-  const data = await Transaction.find();
-  res.json(data);
+// GET
+app.get("/api/expenses", async (req, res) => {
+  try {
+    const data = await Transaction.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ✅ ADD TRANSACTION
-app.post("/transactions", async (req, res) => {
+// POST
+app.post("/api/expenses", async (req, res) => {
   const newData = new Transaction(req.body);
   await newData.save();
   res.json(newData);
 });
 
-// ✅ DELETE
-app.delete("/transactions/:id", async (req, res) => {
+// DELETE ✅ FIXED
+app.delete("/api/expenses/:id", async (req, res) => {
   await Transaction.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 });
 
-// ✅ UPDATE
-app.put("/transactions/:id", async (req, res) => {
+// UPDATE ✅ FIXED
+app.put("/api/expenses/:id", async (req, res) => {
   const updated = await Transaction.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -57,7 +60,6 @@ app.put("/transactions/:id", async (req, res) => {
   res.json(updated);
 });
 
-// ✅ START SERVER
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
