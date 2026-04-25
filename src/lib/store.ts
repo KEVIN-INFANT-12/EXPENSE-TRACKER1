@@ -17,7 +17,8 @@ export type Category =
   | "other";
 
 export const EXPENSE_CATEGORIES: Category[] = [
-  "food", "rent", "transport", "entertainment", "utilities", "shopping", "health", "education", "other",
+  "food", "rent", "transport", "entertainment", "utilities",
+  "shopping", "health", "education", "other",
 ];
 
 export const INCOME_CATEGORIES: Category[] = [
@@ -64,7 +65,7 @@ export interface Transaction {
   recurring?: boolean;
 }
 
-// ✅ FINAL API (USE THIS ONLY)
+// ✅ BACKEND URL
 const API = "https://expense-backend-37bi.onrender.com";
 
 // ================= TRANSACTIONS =================
@@ -72,10 +73,10 @@ const API = "https://expense-backend-37bi.onrender.com";
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // ✅ FETCH
+  // ✅ FETCH DATA
   const fetchTransactions = async () => {
     try {
-      const res = await fetch(`${API}/transactions`);
+      const res = await fetch(`${API}/api/expenses`);
       const data = await res.json();
       console.log("DATA FROM BACKEND:", data);
       setTransactions(data);
@@ -88,10 +89,10 @@ export function useTransactions() {
     fetchTransactions();
   }, []);
 
-  // ✅ ADD
+  // ✅ ADD TRANSACTION
   const addTransaction = useCallback(async (tx: Omit<Transaction, "_id">) => {
     try {
-      const res = await fetch(`${API}/transactions`, {
+      const res = await fetch(`${API}/api/expenses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -106,22 +107,27 @@ export function useTransactions() {
     }
   }, []);
 
-  // ✅ DELETE
+  // ✅ DELETE TRANSACTION (FIXED 🔥)
   const deleteTransaction = useCallback(async (id: string) => {
     try {
-      await fetch(`${API}/transactions/${id}`, {
-        method: "DELETE"
+      await fetch(`${API}/api/expenses/${id}`, {
+        method: "DELETE",
       });
-      setTransactions(prev => prev.filter(t => t._id !== id));
+
+      // update UI instantly
+      setTransactions(prev =>
+        prev.filter(item => item._id !== id)
+      );
+
     } catch (err) {
       console.error("DELETE ERROR:", err);
     }
   }, []);
 
-  // ✅ UPDATE
+  // ✅ UPDATE TRANSACTION
   const updateTransaction = useCallback(async (id: string, data: Partial<Transaction>) => {
     try {
-      const res = await fetch(`${API}/transactions/${id}`, {
+      const res = await fetch(`${API}/api/expenses/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -130,15 +136,22 @@ export function useTransactions() {
       });
 
       const updated = await res.json();
+
       setTransactions(prev =>
         prev.map(t => t._id === id ? updated : t)
       );
+
     } catch (err) {
       console.error("UPDATE ERROR:", err);
     }
   }, []);
 
-  return { transactions, addTransaction, deleteTransaction, updateTransaction };
+  return {
+    transactions,
+    addTransaction,
+    deleteTransaction,
+    updateTransaction
+  };
 }
 
 // ================= BUDGETS =================
@@ -158,7 +171,9 @@ export function useBudgets() {
   };
 
   const updateBudget = (id: string, data: Partial<Budget>) => {
-    setBudgets(prev => prev.map(b => b.id === id ? { ...b, ...data } : b));
+    setBudgets(prev =>
+      prev.map(b => b.id === id ? { ...b, ...data } : b)
+    );
   };
 
   const deleteBudget = (id: string) => {
