@@ -26,7 +26,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
 
             {/* ✅ FIXED Transactions route */}
-            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/api/expenses" element={<TransactionsPage />} />
 
             {/* ✅ Other pages */}
             <Route path="/budgets" element={<Budgets />} />

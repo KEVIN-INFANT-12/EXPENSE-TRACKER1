@@ -2,44 +2,31 @@ import { useTransactions } from "../hooks/useTransactions";
 import { useState } from "react";
 
 export default function TransactionsPage() {
-  const { transactions, deleteTransaction } = useTransactions();
+  const { transactions, deleteTransaction, addTransaction } = useTransactions();
 
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [type, setType] = useState("expense");
 
-  const API = "https://expense-backend-37bi.onrender.com";
+  const handleAdd = () => {
+    if (!amount || !category) return;
 
-  const addTransaction = async () => {
-    try {
-      const res = await fetch(`${API}/api/expenses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          amount: Number(amount),
-          category,
-          type,
-          date: new Date().toISOString(),
-          notes: ""
-        })
-      });
+    addTransaction({
+      amount: Number(amount),
+      category,
+      type: type as "income" | "expense",
+      date: new Date().toISOString(),
+      notes: ""
+    });
 
-      const data = await res.json();
-      console.log("ADDED:", data);
-
-      // refresh page manually for now
-      window.location.reload();
-
-    } catch (err) {
-      console.error(err);
-    }
+    setAmount("");
+    setCategory("");
   };
 
   return (
     <div style={{ padding: "20px" }}>
       
+      {/* ADD FORM */}
       <h1>Add Transaction</h1>
 
       <input
@@ -61,12 +48,11 @@ export default function TransactionsPage() {
         <option value="income">Income</option>
       </select>
 
-      <button onClick={addTransaction}>
-        Add
-      </button>
+      <button onClick={handleAdd}>Add</button>
 
       <hr />
 
+      {/* LIST */}
       <h1>Transactions</h1>
 
       {transactions.length === 0 ? (
