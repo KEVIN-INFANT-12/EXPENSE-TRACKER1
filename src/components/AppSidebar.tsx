@@ -23,7 +23,7 @@ import {
 // ✅ FIXED ROUTES (frontend only)
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Transactions", url: "/transactions", icon: ArrowLeftRight }, // ✅ FIXED
+  { title: "Transactions", url: "/api/expenses", icon: ArrowLeftRight }, // ✅ FIXED
   { title: "Budgets", url: "/budgets", icon: PiggyBank },
   { title: "Goals", url: "/goals", icon: Target },
 ];
