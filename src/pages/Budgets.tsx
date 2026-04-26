@@ -1,19 +1,18 @@
-import { useTransactions } from "../hooks/useTransactions.ts";
-import { useBudgets } from "../hooks/useBudgets.ts";
 import { useState } from "react";
+import { useBudgets, Category } from "../hooks/useTransactions";
+import { Button } from "@/components/ui/button";
 
 export default function Budgets() {
   const { budgets, addBudget, deleteBudget } = useBudgets();
-  const { transactions, deleteTransaction } = useTransactions();
 
   const [category, setCategory] = useState("");
   const [limit, setLimit] = useState("");
 
-  const handleAddBudget = () => {
+  const handleAdd = () => {
     if (!category || !limit) return;
 
     addBudget({
-      category,
+      category: category as Category,
       limit: Number(limit),
       month: new Date().toISOString().slice(0, 7),
     });
@@ -23,60 +22,61 @@ export default function Budgets() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Transactions</h1>
+    <div className="p-6 space-y-6">
 
-      {transactions.length === 0 ? (
-        <p>No transactions found</p>
-      ) : (
-        transactions.map((t) => (
-          <div key={t._id}>
-            {t.category} - ₹{t.amount}
-            <button onClick={() => deleteTransaction(t._id!)}>
-              Delete
-            </button>
-          </div>
-        ))
-      )}
+      {/* TITLE */}
+      <h1 className="text-2xl font-bold">Budgets</h1>
 
-      <h1>Add Budget</h1>
+      {/* ADD FORM */}
+      <div className="flex gap-3 flex-wrap">
 
-      <input
-        type="text"
-        placeholder="Category"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-      />
+        <input
+          type="text"
+          placeholder="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="border rounded-md px-3 py-2"
+        />
 
-      <input
-        type="number"
-        placeholder="Limit"
-        value={limit}
-        onChange={(e) => setLimit(e.target.value)}
-      />
+        <input
+          type="number"
+          placeholder="Limit"
+          value={limit}
+          onChange={(e) => setLimit(e.target.value)}
+          className="border rounded-md px-3 py-2"
+        />
 
-      <button onClick={handleAddBudget}>Add Budget</button>
+        <Button onClick={handleAdd}>
+          Add Budget
+        </Button>
 
-      <h1>Budgets</h1>
+      </div>
 
+      {/* LIST */}
       {budgets.length === 0 ? (
         <p>No budgets yet</p>
       ) : (
-        budgets.map((b) => {
-          const spent = transactions
-            .filter((t) => t.category === b.category)
-            .reduce((sum, t) => sum + t.amount, 0);
+        <div className="space-y-3">
+          {budgets.map((b) => (
+            <div
+              key={b.id}
+              className="flex justify-between items-center border rounded-lg p-4"
+            >
+              <span>
+                {b.category} - ₹ {b.limit}
+              </span>
 
-          return (
-            <div key={b.id}>
-              {b.category} - ₹{b.limit} | Spent: ₹{spent}
-              <button onClick={() => deleteBudget(b.id)}>
+              <Button
+                variant="destructive"
+                onClick={() => deleteBudget(b.id)}
+              >
                 Delete
-              </button>
+              </Button>
             </div>
-          );
-        })
+          ))}
+        </div>
       )}
+
     </div>
   );
 }

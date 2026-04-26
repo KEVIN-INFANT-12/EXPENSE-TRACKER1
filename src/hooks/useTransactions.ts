@@ -68,3 +68,39 @@ export function useTransactions() {
     deleteTransaction
   };
 }
+// ================= BUDGETS =================
+
+export type Category =
+  | "food"
+  | "rent"
+  | "transport"
+  | "entertainment"
+  | "utilities"
+  | "shopping"
+  | "health"
+  | "education"
+  | "salary"
+  | "freelance"
+  | "investment"
+  | "other";
+
+export interface Budget {
+  id: string;
+  category: Category;
+  limit: number;
+  month: string;
+}
+
+export function useBudgets() {
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+
+  const addBudget = (bg: Omit<Budget, "id">) => {
+    setBudgets(prev => [...prev, { ...bg, id: `b-${Date.now()}` }]);
+  };
+
+  const deleteBudget = (id: string) => {
+    setBudgets(prev => prev.filter(b => b.id !== id));
+  };
+
+  return { budgets, addBudget, deleteBudget };
+}
