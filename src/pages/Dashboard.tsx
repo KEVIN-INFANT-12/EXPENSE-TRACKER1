@@ -1,15 +1,9 @@
 import { useTransactions } from "../hooks/useTransactions";
-import { TransactionDialog } from "../components/TransactionDialog";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
-  const { transactions, addTransaction } = useTransactions();
+  const { transactions } = useTransactions();
 
-  // ✅ ADD HANDLER (VERY IMPORTANT)
-  const handleSave = (tx: any) => {
-    addTransaction(tx);
-  };
-
-  // ✅ CALCULATIONS
   const totalBalance = transactions.reduce(
     (sum, t) => (t.type === "income" ? sum + t.amount : sum - t.amount),
     0
@@ -24,46 +18,68 @@ export default function Dashboard() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Dashboard</h1>
+    <div className="p-6 space-y-6">
 
-      {/* ✅ ADD BUTTON */}
-      <div style={{ marginTop: "20px" }}>
-        <TransactionDialog onSave={handleSave} />
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+
+        <Button>
+          + Add Transaction
+        </Button>
       </div>
 
-      {/* ✅ SUMMARY */}
-      <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-        
-        <div style={{ border: "1px solid #ccc", padding: "15px" }}>
-          <h3>Balance</h3>
-          <p>Rs. {totalBalance}</p>
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <div className="border rounded-lg p-4">
+          <h3 className="text-sm text-gray-500">Balance</h3>
+          <p className="text-xl font-bold">₹ {totalBalance}</p>
         </div>
 
-        <div style={{ border: "1px solid #ccc", padding: "15px" }}>
-          <h3>Income</h3>
-          <p>Rs. {totalIncome}</p>
+        <div className="border rounded-lg p-4">
+          <h3 className="text-sm text-gray-500">Income</h3>
+          <p className="text-xl font-bold text-green-600">
+            ₹ {totalIncome}
+          </p>
         </div>
 
-        <div style={{ border: "1px solid #ccc", padding: "15px" }}>
-          <h3>Expenses</h3>
-          <p>Rs. {totalExpenses}</p>
+        <div className="border rounded-lg p-4">
+          <h3 className="text-sm text-gray-500">Expenses</h3>
+          <p className="text-xl font-bold text-red-600">
+            ₹ {totalExpenses}
+          </p>
         </div>
 
       </div>
 
-      {/* ✅ TRANSACTIONS */}
-      <h2 style={{ marginTop: "30px" }}>Recent Transactions</h2>
+      {/* Recent Transactions */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">
+          Recent Transactions
+        </h2>
 
-      {transactions.length === 0 ? (
-        <p>No data found</p>
-      ) : (
-        transactions.slice(0, 5).map((t) => (
-          <div key={t._id} style={{ marginTop: "10px" }}>
-            {t.category} - Rs. {t.amount} ({t.type})
+        {transactions.length === 0 ? (
+          <p>No data found</p>
+        ) : (
+          <div className="space-y-2">
+            {transactions.slice(0, 5).map((t) => (
+              <div
+                key={t._id}
+                className="border rounded-lg p-3 flex justify-between"
+              >
+                <span>
+                  {t.category} - ₹ {t.amount}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {t.type}
+                </span>
+              </div>
+            ))}
           </div>
-        ))
-      )}
+        )}
+      </div>
+
     </div>
   );
 }
