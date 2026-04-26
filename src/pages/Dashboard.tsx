@@ -3,7 +3,6 @@ import { useTransactions } from "../hooks/useTransactions";
 export default function Dashboard() {
   const { transactions } = useTransactions();
 
-  // 🔢 Calculations
   const totalBalance = transactions.reduce((sum, t) => {
     return t.type === "income" ? sum + t.amount : sum - t.amount;
   }, 0);
@@ -20,40 +19,22 @@ export default function Dashboard() {
     <div style={{ padding: "20px" }}>
       <h1>Dashboard</h1>
 
-      <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
-        
-        {/* Balance */}
-        <div style={{ border: "1px solid #ccc", padding: "15px" }}>
-          <h3>Total Balance</h3>
+      <div style={{ display: "flex", gap: "20px" }}>
+        <div>
+          <h3>Balance</h3>
           <p>₹{totalBalance}</p>
         </div>
 
-        {/* Income */}
-        <div style={{ border: "1px solid #ccc", padding: "15px" }}>
-          <h3>Total Income</h3>
+        <div>
+          <h3>Income</h3>
           <p>₹{totalIncome}</p>
         </div>
 
-        {/* Expenses */}
-        <div style={{ border: "1px solid #ccc", padding: "15px" }}>
-          <h3>Total Expenses</h3>
+        <div>
+          <h3>Expenses</h3>
           <p>₹{totalExpenses}</p>
         </div>
-
       </div>
-
-      {/* Recent Transactions */}
-      <h2 style={{ marginTop: "30px" }}>Recent Transactions</h2>
-
-      {transactions.length === 0 ? (
-        <p>No data found</p>
-      ) : (
-        transactions.slice(0, 5).map((t) => (
-          <div key={t._id} style={{ marginTop: "10px" }}>
-            {t.category} - ₹{t.amount} ({t.type})
-          </div>
-        ))
-      )}
     </div>
   );
 }
