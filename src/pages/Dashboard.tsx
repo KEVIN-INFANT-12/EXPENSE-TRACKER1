@@ -1,8 +1,15 @@
 import { useTransactions } from "../hooks/useTransactions";
+import { TransactionDialog } from "../components/TransactionDialog";
 
 export default function Dashboard() {
-  const { transactions } = useTransactions();
+  const { transactions, addTransaction } = useTransactions();
 
+  // ✅ ADD HANDLER (VERY IMPORTANT)
+  const handleSave = (tx: any) => {
+    addTransaction(tx);
+  };
+
+  // ✅ CALCULATIONS
   const totalBalance = transactions.reduce(
     (sum, t) => (t.type === "income" ? sum + t.amount : sum - t.amount),
     0
@@ -20,21 +27,24 @@ export default function Dashboard() {
     <div style={{ padding: "20px" }}>
       <h1>Dashboard</h1>
 
+      {/* ✅ ADD BUTTON */}
+      <div style={{ marginTop: "20px" }}>
+        <TransactionDialog onSave={handleSave} />
+      </div>
+
+      {/* ✅ SUMMARY */}
       <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
         
-        {/* Balance */}
         <div style={{ border: "1px solid #ccc", padding: "15px" }}>
           <h3>Balance</h3>
           <p>Rs. {totalBalance}</p>
         </div>
 
-        {/* Income */}
         <div style={{ border: "1px solid #ccc", padding: "15px" }}>
           <h3>Income</h3>
           <p>Rs. {totalIncome}</p>
         </div>
 
-        {/* Expenses */}
         <div style={{ border: "1px solid #ccc", padding: "15px" }}>
           <h3>Expenses</h3>
           <p>Rs. {totalExpenses}</p>
@@ -42,7 +52,7 @@ export default function Dashboard() {
 
       </div>
 
-      {/* Recent Transactions */}
+      {/* ✅ TRANSACTIONS */}
       <h2 style={{ marginTop: "30px" }}>Recent Transactions</h2>
 
       {transactions.length === 0 ? (
