@@ -25,43 +25,80 @@ export default function TransactionsPage() {
 
   return (
     <div style={{ padding: "20px" }}>
-      
+      <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>
+        Transactions
+      </h1>
+
       {/* ADD FORM */}
-      <h1>Add Transaction</h1>
+      <div style={{ marginBottom: "20px" }}>
+        <input
+          type="number"
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          style={{ marginRight: "10px", padding: "8px" }}
+        />
 
-      <input
-        type="number"
-        placeholder="Amount"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
+        <input
+          type="text"
+          placeholder="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          style={{ marginRight: "10px", padding: "8px" }}
+        />
 
-      <input
-        type="text"
-        placeholder="Category"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-      />
+        <select
+          onChange={(e) => setType(e.target.value)}
+          style={{ marginRight: "10px", padding: "8px" }}
+        >
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
 
-      <select onChange={(e) => setType(e.target.value)}>
-        <option value="expense">Expense</option>
-        <option value="income">Income</option>
-      </select>
-
-      <button onClick={handleAdd}>Add</button>
-
-      <hr />
+        <button
+          onClick={handleAdd}
+          style={{
+            padding: "8px 12px",
+            background: "blue",
+            color: "white",
+            border: "none",
+            borderRadius: "5px"
+          }}
+        >
+          Add
+        </button>
+      </div>
 
       {/* LIST */}
-      <h1>Transactions</h1>
-
       {transactions.length === 0 ? (
         <p>No data found</p>
       ) : (
         transactions.map((t) => (
-          <div key={t._id}>
-            {t.category} - ₹{t.amount}
-            <button onClick={() => deleteTransaction(t._id!)}>
+          <div
+            key={t._id}
+            style={{
+              border: "1px solid #ccc",
+              padding: "10px",
+              marginBottom: "10px",
+              borderRadius: "5px",
+              display: "flex",
+              justifyContent: "space-between"
+            }}
+          >
+            <span>
+              {t.category} - Rs. {t.amount} ({t.type})
+            </span>
+
+            <button
+              onClick={() => deleteTransaction(t._id!)}
+              style={{
+                background: "red",
+                color: "white",
+                border: "none",
+                padding: "5px 10px",
+                borderRadius: "5px"
+              }}
+            >
               Delete
             </button>
           </div>
