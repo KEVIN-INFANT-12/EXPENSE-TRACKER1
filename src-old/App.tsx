@@ -4,8 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/AppLayout";
+
 import Dashboard from "@/pages/Dashboard";
-import Transactions from "@/pages/Transactions";
+import TransactionsPage from "@/pages/TransactionsPage"; // ✅ use alias
 import Budgets from "@/pages/Budgets";
 import Goals from "@/pages/Goals";
 import NotFound from "@/pages/NotFound";
@@ -19,13 +20,24 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+
           <Route element={<AppLayout />}>
+
+            {/* ✅ Dashboard */}
             <Route path="/" element={<Dashboard />} />
-            <Route path="/transactions" element={<Transactions />} />
+
+            {/* ✅ FIXED */}
+            <Route path="/transactions" element={<TransactionsPage />} />
+
+            {/* ✅ Other pages */}
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/goals" element={<Goals />} />
+
           </Route>
+
+          {/* 404 */}
           <Route path="*" element={<NotFound />} />
+
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
