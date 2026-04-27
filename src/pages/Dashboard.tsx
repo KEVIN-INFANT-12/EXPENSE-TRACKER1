@@ -1,123 +1,133 @@
-import { useMemo } from "react";
-import {
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  PiggyBank,
-} from "lucide-react";
-
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, Legend,
-} from "recharts";
-
 import { useTransactions } from "../hooks/useTransactions";
-
-// simple category colors (since you don’t have store file)
-const COLORS = ["#3b82f6", "#22c55e", "#ef4444", "#f59e0b", "#8b5cf6"];
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 export default function Dashboard() {
   const { transactions } = useTransactions();
 
-  const stats = useMemo(() => {
-    const income = transactions
-      .filter(t => t.type === "income")
-      .reduce((s, t) => s + t.amount, 0);
+  // CALCULATIONS
+  const income = transactions
+    .filter(t => t.type === "income")
+    .reduce((s, t) => s + t.amount, 0);
 
-    const expenses = transactions
-      .filter(t => t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0);
+  const expenses = transactions
+    .filter(t => t.type === "expense")
+    .reduce((s, t) => s + t.amount, 0);
 
-    // category breakdown
-    const catMap: Record<string, number> = {};
-    transactions.forEach(t => {
-      if (t.type === "expense") {
-        catMap[t.category] = (catMap[t.category] || 0) + t.amount;
-      }
-    });
+  const balance = income - expenses;
 
-    const categoryData = Object.entries(catMap).map(([name, value]) => ({
-      name,
-      value,
-    }));
+  // BAR CHART DATA
+  const barData = [
+    { name: "Total", income, expenses }
+  ];
 
-    return {
-      income,
-      expenses,
-      balance: income - expenses,
-      categoryData,
-    };
-  }, [transactions]);
+  // PIE DATA (CATEGORY)
+  const categoryMap: any = {};
+  transactions.forEach(t => {
+    if (t.type === "expense") {
+      categoryMap[t.category] =
+        (categoryMap[t.category] || 0) + t.amount;
+    }
+  });
 
-  const fmt = (n: number) => "₹" + n.toLocaleString();
+  const pieData = Object.keys(categoryMap).map(key => ({
+    name: key,
+    value: categoryMap[key]
+  }));
+
+  const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   return (
     <div className="p-6 space-y-6">
 
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      {/* HEADER */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+      </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-        <div className="p-4 border rounded-lg">
-          <p>Balance</p>
-          <h2 className="text-xl font-bold">{fmt(stats.balance)}</h2>
+        <div className="bg-white shadow rounded-xl p-5">
+          <p className="text-gray-500">Total Balance</p>
+          <h2 className="text-2xl font-bold">₹{balance}</h2>
         </div>
 
-        <div className="p-4 border rounded-lg">
-          <p>Income</p>
-          <h2 className="text-green-600">{fmt(stats.income)}</h2>
+        <div className="bg-white shadow rounded-xl p-5">
+          <p className="text-gray-500">Income</p>
+          <h2 className="text-green-600 text-2xl font-bold">₹{income}</h2>
         </div>
 
-        <div className="p-4 border rounded-lg">
-          <p>Expenses</p>
-          <h2 className="text-red-600">{fmt(stats.expenses)}</h2>
+        <div className="bg-white shadow rounded-xl p-5">
+          <p className="text-gray-500">Expenses</p>
+          <h2 className="text-red-500 text-2xl font-bold">₹{expenses}</h2>
+        </div>
+
+        <div className="bg-white shadow rounded-xl p-5">
+          <p className="text-gray-500">Transactions</p>
+          <h2 className="text-2xl font-bold">{transactions.length}</h2>
         </div>
 
       </div>
 
-      {/* BAR CHART */}
-      <div className="p-4 border rounded-lg">
-        <h3 className="mb-4">Income vs Expenses</h3>
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={[{ name: "Total", income: stats.income, expenses: stats.expenses }]}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="income" fill="#22c55e" />
-            <Bar dataKey="expenses" fill="#ef4444" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+        {/* BAR */}
+        <div className="bg-white shadow rounded-xl p-5">
+          <h2 className="mb-4 font-semibold">Income vs Expenses</h2>
 
-      {/* PIE CHART */}
-      <div className="p-4 border rounded-lg">
-        <h3 className="mb-4">Category Breakdown</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={barData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="income" fill="#22c55e" />
+              <Bar dataKey="expenses" fill="#ef4444" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie data={stats.categoryData} dataKey="value" nameKey="name">
-              {stats.categoryData.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+        {/* PIE */}
+        <div className="bg-white shadow rounded-xl p-5">
+          <h2 className="mb-4 font-semibold">Category Breakdown</h2>
+
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                outerRadius={80}
+                label
+              >
+                {pieData.map((_, i) => (
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
       </div>
 
       {/* RECENT */}
-      <div className="p-4 border rounded-lg">
-        <h3 className="mb-4">Recent Transactions</h3>
+      <div className="bg-white shadow rounded-xl p-5">
+        <h2 className="mb-4 font-semibold">Recent Transactions</h2>
 
-        {transactions.slice(0, 5).map((tx) => (
-          <div key={tx._id} className="flex justify-between border-b py-2">
-            <span>{tx.category}</span>
-            <span>
-              {tx.type === "income" ? "+" : "-"}{fmt(tx.amount)}
+        {transactions.slice(0, 5).map(t => (
+          <div key={t._id} className="flex justify-between border-b py-2">
+            <span>{t.category}</span>
+            <span className={t.type === "income" ? "text-green-600" : "text-red-500"}>
+              {t.type === "income" ? "+" : "-"}₹{t.amount}
             </span>
           </div>
         ))}
