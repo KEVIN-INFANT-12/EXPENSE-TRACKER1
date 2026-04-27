@@ -1,4 +1,5 @@
 import { useTransactions } from "../hooks/useTransactions";
+import AddTransactionModal from "../components/AddTransactionModal";
 import {
   BarChart,
   Bar,
@@ -14,7 +15,6 @@ import {
 export default function Dashboard() {
   const { transactions } = useTransactions();
 
-  // CALCULATIONS
   const income = transactions
     .filter(t => t.type === "income")
     .reduce((s, t) => s + t.amount, 0);
@@ -25,12 +25,10 @@ export default function Dashboard() {
 
   const balance = income - expenses;
 
-  // BAR CHART DATA
-  const barData = [
-    { name: "Total", income, expenses }
-  ];
+  // BAR DATA
+  const barData = [{ name: "Total", income, expenses }];
 
-  // PIE DATA (CATEGORY)
+  // PIE DATA
   const categoryMap: any = {};
   transactions.forEach(t => {
     if (t.type === "expense") {
@@ -47,11 +45,12 @@ export default function Dashboard() {
   const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Dashboard</h1>
+        <AddTransactionModal />
       </div>
 
       {/* CARDS */}
@@ -82,7 +81,6 @@ export default function Dashboard() {
       {/* CHARTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* BAR */}
         <div className="bg-white shadow rounded-xl p-5">
           <h2 className="mb-4 font-semibold">Income vs Expenses</h2>
 
@@ -97,22 +95,17 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* PIE */}
         <div className="bg-white shadow rounded-xl p-5">
           <h2 className="mb-4 font-semibold">Category Breakdown</h2>
 
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie
-                data={pieData}
-                dataKey="value"
-                outerRadius={80}
-                label
-              >
+              <Pie data={pieData} dataKey="value" outerRadius={80} label>
                 {pieData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
+              <Tooltip />
             </PieChart>
           </ResponsiveContainer>
         </div>

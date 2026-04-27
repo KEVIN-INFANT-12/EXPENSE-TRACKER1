@@ -1,147 +1,122 @@
-import { useState, useMemo } from "react";
 import { useTransactions } from "../hooks/useTransactions";
+import AddTransactionModal from "../components/AddTransactionModal";
+import { useState } from "react";
 
 export default function TransactionsPage() {
-  const { transactions, addTransaction, deleteTransaction } = useTransactions();
+  const { transactions, deleteTransaction } = useTransactions();
 
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterCategory, setFilterCategory] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
-  // FILTER
-  const filtered = useMemo(() => {
-    return transactions.filter((t) => {
-      if (filterType !== "all" && t.type !== filterType) return false;
-      if (filterCategory !== "all" && t.category !== filterCategory) return false;
+  // FILTER LOGIC (SAFE)
+  const filtered = transactions.filter((t) => {
+    return (
+      (typeFilter === "all" || t.type === typeFilter) &&
+      (categoryFilter === "all" || t.category === categoryFilter) &&
+      (t.category || "").toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
-      if (
-        search &&
-        !t.category.toLowerCase().includes(search.toLowerCase()) &&
-        !t.notes.toLowerCase().includes(search.toLowerCase())
-      ) return false;
-
-      return true;
-    });
-  }, [transactions, search, filterType, filterCategory]);
-
-  // ANALYSIS
-  const analysis = useMemo(() => {
-    if (filtered.length === 0) return null;
-
-    const total = filtered.reduce((s, t) => s + t.amount, 0);
-    const avg = total / filtered.length;
-    const max = Math.max(...filtered.map(t => t.amount));
-    const min = Math.min(...filtered.map(t => t.amount));
-
-    return { total, avg, max, min };
-  }, [filtered]);
-
-  const fmt = (n: number) => "₹" + n.toLocaleString();
+  const uniqueCategories = [...new Set(transactions.map(t => t.category))];
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
 
       {/* HEADER */}
-      <h1 className="text-2xl font-bold">Transactions</h1>
-
-      {/* ADD SIMPLE */}
-      <button
-        onClick={() =>
-          addTransaction({
-            amount: 100,
-            category: "test",
-            type: "expense",
-            date: new Date().toISOString(),
-            notes: "test"
-          })
-        }
-        className="bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        + Quick Add
-      </button>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Transactions</h1>
+        <AddTransactionModal />
+      </div>
 
       {/* FILTERS */}
-      <div className="flex flex-col md:flex-row gap-3">
+      <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow">
 
+        {/* SEARCH */}
         <input
-          placeholder="Search..."
+          placeholder="Search by category..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border p-2 flex-1"
+          className="border p-2 rounded w-full"
         />
 
-        <select onChange={(e) => setFilterType(e.target.value)} className="border p-2">
-          <option value="all">All</option>
+        {/* TYPE FILTER */}
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="all">All Types</option>
           <option value="income">Income</option>
           <option value="expense">Expense</option>
         </select>
 
-        <select onChange={(e) => setFilterCategory(e.target.value)} className="border p-2">
+        {/* CATEGORY FILTER */}
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="border p-2 rounded"
+        >
           <option value="all">All Categories</option>
-          {[...new Set(transactions.map(t => t.category))].map((cat) => (
-            <option key={cat}>{cat}</option>
-          ))}
+
+          {uniqueCategories.length === 0 ? (
+            <option disabled>No categories</option>
+          ) : (
+            uniqueCategories.map((c, i) => (
+              <option key={i}>{c}</option>
+            ))
+          )}
         </select>
 
       </div>
 
-      {/* ANALYSIS */}
-      {analysis && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-
-          <div className="p-3 border rounded">
-            <p>Total</p>
-            <b>{fmt(analysis.total)}</b>
-          </div>
-
-          <div className="p-3 border rounded">
-            <p>Avg</p>
-            <b>{fmt(analysis.avg)}</b>
-          </div>
-
-          <div className="p-3 border rounded">
-            <p>Max</p>
-            <b>{fmt(analysis.max)}</b>
-          </div>
-
-          <div className="p-3 border rounded">
-            <p>Min</p>
-            <b>{fmt(analysis.min)}</b>
-          </div>
-
-        </div>
-      )}
-
       {/* LIST */}
-      <div className="border rounded">
+      <div className="bg-white shadow rounded-xl p-4">
 
-        {filtered.length === 0 && (
-          <p className="p-4 text-center">No transactions</p>
+        {filtered.length === 0 ? (
+          <p className="text-center text-gray-500 py-6">
+            No transactions found
+          </p>
+        ) : (
+          filtered.map((t) => (
+            <div
+              key={t._id || Math.random()}
+              className="flex justify-between items-center border-b py-3"
+            >
+
+              {/* LEFT */}
+              <div>
+                <p className="font-medium">{t.category}</p>
+                <p className="text-sm text-gray-500">
+                  {new Date(t.date).toLocaleDateString()}
+                </p>
+              </div>
+
+              {/* RIGHT */}
+              <div className="flex items-center gap-4">
+
+                <span
+                  className={
+                    t.type === "income"
+                      ? "text-green-600 font-semibold"
+                      : "text-red-500 font-semibold"
+                  }
+                >
+                  {t.type === "income" ? "+" : "-"}₹{t.amount}
+                </span>
+
+                <button
+                  onClick={() => deleteTransaction(t._id!)}
+                  className="text-red-500 hover:underline"
+                >
+                  Delete
+                </button>
+
+              </div>
+
+            </div>
+          ))
         )}
-
-        {filtered.map((tx) => (
-          <div key={tx._id} className="flex justify-between p-3 border-b">
-
-            <div>
-              <p>{tx.category}</p>
-              <small>{tx.date}</small>
-            </div>
-
-            <div className="flex gap-3 items-center">
-              <span>
-                {tx.type === "income" ? "+" : "-"}{fmt(tx.amount)}
-              </span>
-
-              <button
-                onClick={() => deleteTransaction(tx._id!)}
-                className="text-red-500"
-              >
-                Delete
-              </button>
-            </div>
-
-          </div>
-        ))}
 
       </div>
 
