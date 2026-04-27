@@ -1,184 +1,81 @@
-import { useState, useEffect, useCallback } from "react";
+const API = "https://expense-backend-37bi.onrender.com";
 
-export type TransactionType = "expense" | "income";
-
-export type Category =
-  | "food"
-  | "rent"
-  | "transport"
-  | "entertainment"
-  | "utilities"
-  | "shopping"
-  | "health"
-  | "education"
-  | "salary"
-  | "freelance"
-  | "investment"
-  | "other";
-
-export const EXPENSE_CATEGORIES: Category[] = [
-  "food", "rent", "transport", "entertainment", "utilities",
-  "shopping", "health", "education", "other",
-];
-
-export const INCOME_CATEGORIES: Category[] = [
-  "salary", "freelance", "investment", "other",
-];
-
-export const CATEGORY_ICONS: Record<Category, string> = {
-  food: "🍔",
-  rent: "🏠",
-  transport: "🚗",
-  entertainment: "🎬",
-  utilities: "💡",
-  shopping: "🛍️",
-  health: "🏥",
-  education: "📚",
-  salary: "💰",
-  freelance: "💻",
-  investment: "📈",
-  other: "📌",
-};
-
-export const CATEGORY_COLORS: Record<Category, string> = {
-  food: "#3B82F6",
-  rent: "#6366F1",
-  transport: "#F59E0B",
-  entertainment: "#EC4899",
-  utilities: "#8B5CF6",
-  shopping: "#14B8A6",
-  health: "#EF4444",
-  education: "#06B6D4",
-  salary: "#22C55E",
-  freelance: "#3B82F6",
-  investment: "#F59E0B",
-  other: "#94A3B8",
-};
+// ================= TYPES =================
+export type TransactionType = "income" | "expense";
 
 export interface Transaction {
-  _id?: string;
+  id: string;
   amount: number;
-  category: Category;
+  category: string;
   type: TransactionType;
   date: string;
   notes: string;
-  recurring?: boolean;
 }
 
-// ✅ BACKEND URL
-const API = "https://expense-backend-37bi.onrender.com";
-
 // ================= TRANSACTIONS =================
+import { useState, useEffect } from "react";
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // ✅ FETCH DATA
-  const fetchTransactions = async () => {
-    try {
-      const res = await fetch(`${API}/api/expenses`);
-      const data = await res.json();
-      console.log("DATA FROM BACKEND:", data);
-      setTransactions(data);
-    } catch (err) {
-      console.error("FETCH ERROR:", err);
-    }
+  // FETCH
+  const fetchData = async () => {
+    const res = await fetch(`${API}/api/expenses`);
+    const data = await res.json();
+
+    // 🔥 IMPORTANT FIX: map _id → id
+    const fixed = data.map((t: any) => ({
+      ...t,
+      id: t._id
+    }));
+
+    setTransactions(fixed);
   };
 
   useEffect(() => {
-    fetchTransactions();
+    fetchData();
   }, []);
 
-  // ✅ ADD TRANSACTION
-  const addTransaction = useCallback(async (tx: Omit<Transaction, "_id">) => {
-    try {
-      const res = await fetch(`${API}/api/expenses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(tx)
-      });
+  // ADD
+  const addTransaction = async (tx: Omit<Transaction, "id">) => {
+    const res = await fetch(`${API}/api/expenses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(tx)
+    });
 
-      const newTx = await res.json();
-      setTransactions(prev => [newTx, ...prev]);
-    } catch (err) {
-      console.error("ADD ERROR:", err);
-    }
-  }, []);
+    const newTx = await res.json();
 
-  // ✅ DELETE TRANSACTION (FIXED 🔥)
-  const deleteTransaction = useCallback(async (id: string) => {
-    try {
-      await fetch(`${API}/api/expenses/${id}`, {
-        method: "DELETE",
-      });
-
-      // update UI instantly
-      setTransactions(prev =>
-        prev.filter(item => item._id !== id)
-      );
-
-    } catch (err) {
-      console.error("DELETE ERROR:", err);
-    }
-  }, []);
-
-  // ✅ UPDATE TRANSACTION
-  const updateTransaction = useCallback(async (id: string, data: Partial<Transaction>) => {
-    try {
-      const res = await fetch(`${API}/api/expenses/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      });
-
-      const updated = await res.json();
-
-      setTransactions(prev =>
-        prev.map(t => t._id === id ? updated : t)
-      );
-
-    } catch (err) {
-      console.error("UPDATE ERROR:", err);
-    }
-  }, []);
-
-  return {
-    transactions,
-    addTransaction,
-    deleteTransaction,
-    updateTransaction
-  };
-}
-
-// ================= BUDGETS =================
-
-export interface Budget {
-  id: string;
-  category: Category;
-  limit: number;
-  month: string;
-}
-
-export function useBudgets() {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-
-  const addBudget = (bg: Omit<Budget, "id">) => {
-    setBudgets(prev => [...prev, { ...bg, id: `b-${Date.now()}` }]);
+    setTransactions(prev => [{ ...newTx, id: newTx._id }, ...prev]);
   };
 
-  const updateBudget = (id: string, data: Partial<Budget>) => {
-    setBudgets(prev =>
-      prev.map(b => b.id === id ? { ...b, ...data } : b)
+  // DELETE
+  const deleteTransaction = async (id: string) => {
+    await fetch(`${API}/api/expenses/${id}`, {
+      method: "DELETE"
+    });
+
+    setTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
+  // UPDATE
+  const updateTransaction = async (id: string, data: Partial<Transaction>) => {
+    const res = await fetch(`${API}/api/expenses/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+
+    const updated = await res.json();
+
+    setTransactions(prev =>
+      prev.map(t => t.id === id ? { ...updated, id } : t)
     );
   };
 
-  const deleteBudget = (id: string) => {
-    setBudgets(prev => prev.filter(b => b.id !== id));
-  };
-
-  return { budgets, addBudget, updateBudget, deleteBudget };
+  return { transactions, addTransaction, deleteTransaction, updateTransaction };
 }
