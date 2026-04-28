@@ -1,124 +1,205 @@
-import { useTransactions } from "@/lib/store";
+import { useMemo } from "react";
+import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
+import { StatCard } from "@/components/StatCard";
+import { TransactionDialog } from "@/components/TransactionDialog";
+import {
+  useTransactions, useBudgets, CATEGORY_ICONS, CATEGORY_COLORS, type Category,
+} from "@/lib/store";
 
 export default function Dashboard() {
-  const { transactions } = useTransactions();
+  const { transactions, addTransaction } = useTransactions();
+  const { budgets } = useBudgets();
 
-  // ================= SUMMARY =================
-  const income = transactions
-    .filter((t) => t.type === "income")
-    .reduce((s, t) => s + t.amount, 0);
+  const stats = useMemo(() => {
+    const now = new Date();
 
-  const expenses = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((s, t) => s + t.amount, 0);
+    // ✅ FIXED DATE (NO toISOString)
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const lastDate = new Date(now.getFullYear(), now.getMonth() - 1);
+    const lastMonth = `${lastDate.getFullYear()}-${String(lastDate.getMonth() + 1).padStart(2, "0")}`;
 
-  const balance = income - expenses;
+    const thisMonthTx = transactions.filter(t => t.date.startsWith(thisMonth));
+    const lastMonthTx = transactions.filter(t => t.date.startsWith(lastMonth));
 
-  // ================= FIXED MONTHLY LOGIC =================
-  const monthlyData: Record<
-    string,
-    { income: number; expense: number }
-  > = {};
+    const income = thisMonthTx.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const expenses = thisMonthTx.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    const lastExpenses = lastMonthTx.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
 
-  transactions.forEach((t) => {
-    const d = new Date(t.date);
+    const expenseTrend = lastExpenses ? ((expenses - lastExpenses) / lastExpenses) * 100 : 0;
 
-    const month = d.toLocaleString("default", {
-      month: "short",
-      year: "numeric",
+    // Category breakdown
+    const catMap: Record<string, number> = {};
+    thisMonthTx.filter(t => t.type === "expense").forEach(t => {
+      catMap[t.category] = (catMap[t.category] || 0) + t.amount;
     });
 
-    if (!monthlyData[month]) {
-      monthlyData[month] = { income: 0, expense: 0 };
+    const categoryData = Object.entries(catMap)
+      .map(([name, value]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value: Math.round(value),
+        color: CATEGORY_COLORS[name as Category],
+        icon: CATEGORY_ICONS[name as Category],
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    // ✅ FIXED MONTHLY DATA
+    const monthlyData = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i);
+
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+      const label = d.toLocaleDateString("en", { month: "short" });
+
+      const mTx = transactions.filter(t => t.date.startsWith(key));
+
+      monthlyData.push({
+        month: label,
+        income: Math.round(mTx.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0)),
+        expenses: Math.round(mTx.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0)),
+      });
     }
 
-    if (t.type === "income") {
-      monthlyData[month].income += t.amount;
-    } else {
-      monthlyData[month].expense += t.amount;
-    }
-  });
+    // Budget usage
+    const budgetData = budgets.map(b => {
+      const spent = thisMonthTx
+        .filter(t => t.type === "expense" && t.category === b.category)
+        .reduce((s, t) => s + t.amount, 0);
 
-  const chartData = Object.keys(monthlyData).map((month) => ({
-    month,
-    income: monthlyData[month].income,
-    expense: monthlyData[month].expense,
-  }));
+      return {
+        category: b.category.charAt(0).toUpperCase() + b.category.slice(1),
+        budget: b.limit,
+        spent: Math.round(spent),
+        pct: Math.round((spent / b.limit) * 100),
+      };
+    });
 
-  // ================= UI =================
+    const topCategory = categoryData[0];
+    const avgDaily = Math.round(expenses / (now.getDate() || 1));
+
+    return {
+      income,
+      expenses,
+      balance: income - expenses,
+      expenseTrend,
+      categoryData,
+      monthlyData,
+      budgetData,
+      topCategory,
+      avgDaily
+    };
+  }, [transactions, budgets]);
+
+  const fmt = (n: number) => "₹" + n.toLocaleString("en-IN");
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
 
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Your financial overview</p>
+        </div>
+        <TransactionDialog onSave={addTransaction} />
+      </div>
 
-      {/* CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Balance" value={fmt(stats.balance)} icon={Wallet} variant="primary" />
+        <StatCard title="Income" value={fmt(stats.income)} icon={TrendingUp} variant="success" />
+        <StatCard title="Expenses" value={fmt(stats.expenses)} icon={TrendingDown} variant="warning" />
+        <StatCard title="Avg Daily" value={fmt(stats.avgDaily)} icon={PiggyBank} />
+      </div>
 
-        <div className="bg-white shadow rounded-xl p-5">
-          <p className="text-gray-500">Balance</p>
-          <h2 className="text-2xl font-bold">₹{balance}</h2>
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Bar */}
+        <div className="lg:col-span-2 rounded-xl border bg-card p-5">
+          <h3 className="font-semibold mb-4">Income vs Expenses</h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={stats.monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="income" fill="#22c55e" />
+              <Bar dataKey="expenses" fill="#ef4444" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        <div className="bg-white shadow rounded-xl p-5">
-          <p className="text-gray-500">Income</p>
-          <h2 className="text-2xl font-bold text-green-600">₹{income}</h2>
-        </div>
-
-        <div className="bg-white shadow rounded-xl p-5">
-          <p className="text-gray-500">Expenses</p>
-          <h2 className="text-2xl font-bold text-red-500">₹{expenses}</h2>
+        {/* Pie */}
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="font-semibold mb-4">Spending by Category</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={stats.categoryData} dataKey="value">
+                {stats.categoryData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
 
       </div>
 
-      {/* BAR CHART */}
-      <div className="bg-white shadow rounded-xl p-5">
-        <h2 className="text-xl font-semibold mb-4">
-          Monthly Income vs Expense
-        </h2>
+      {/* Trend + Budget */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="income" />
-            <Bar dataKey="expense" />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="font-semibold mb-4">Spending Trend</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={stats.monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="expenses" stroke="#3b82f6" strokeWidth={2.5} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="rounded-xl border bg-card p-5">
+          <h3 className="font-semibold mb-4">Budget Status</h3>
+          <div className="space-y-4">
+            {stats.budgetData.map((b) => (
+              <div key={b.category}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>{b.category}</span>
+                  <span>{fmt(b.spent)} / {fmt(b.budget)}</span>
+                </div>
+                <div className="h-2 bg-muted rounded">
+                  <div
+                    className="h-full rounded"
+                    style={{
+                      width: `${Math.min(b.pct, 100)}%`,
+                      backgroundColor: b.pct > 90 ? "red" : b.pct > 70 ? "orange" : "green"
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
-      {/* RECENT */}
-      <div className="bg-white shadow rounded-xl p-5">
-        <h2 className="text-xl font-semibold mb-4">
-          Recent Transactions
-        </h2>
-
-        {transactions.slice(0, 5).map((t) => (
-          <div
-            key={t.id}
-            className="flex justify-between border-b py-2"
-          >
-            <span>{t.category}</span>
-            <span
-              className={
-                t.type === "income"
-                  ? "text-green-600"
-                  : "text-red-500"
-              }
-            >
-              {t.type === "income" ? "+" : "-"}₹{t.amount}
-            </span>
+      {/* Recent */}
+      <div className="rounded-xl border bg-card p-5">
+        <h3 className="font-semibold mb-4">Recent Transactions</h3>
+        {transactions.slice(0, 5).map(tx => (
+          <div key={tx.id} className="flex justify-between py-2 border-b">
+            <span>{CATEGORY_ICONS[tx.category]} {tx.category}</span>
+            <span>{tx.type === "income" ? "+" : "-"}{fmt(tx.amount)}</span>
           </div>
         ))}
       </div>

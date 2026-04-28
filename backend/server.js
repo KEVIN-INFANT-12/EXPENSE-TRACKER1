@@ -1,6 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import budgetRoutes from "./routes/budgetRoutes.js";
+app.use("/api/budgets", budgetRoutes);
 
 const app = express();
 

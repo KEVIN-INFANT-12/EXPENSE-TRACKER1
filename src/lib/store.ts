@@ -4,10 +4,24 @@ import { useState, useEffect } from "react";
 
 export type TransactionType = "income" | "expense";
 
+export type Category =
+  | "food"
+  | "rent"
+  | "transport"
+  | "entertainment"
+  | "utilities"
+  | "shopping"
+  | "health"
+  | "education"
+  | "salary"
+  | "freelance"
+  | "investment"
+  | "other";
+
 export interface Transaction {
   id: string;
   amount: number;
-  category: string; // ✅ FIXED
+  category: Category;
   type: TransactionType;
   date: string;
   notes: string;
@@ -15,26 +29,16 @@ export interface Transaction {
 
 /* ================= CONSTANTS ================= */
 
-export const EXPENSE_CATEGORIES = [
-  "food",
-  "rent",
-  "transport",
-  "entertainment",
-  "utilities",
-  "shopping",
-  "health",
-  "education",
-  "other",
+export const EXPENSE_CATEGORIES: Category[] = [
+  "food", "rent", "transport", "entertainment",
+  "utilities", "shopping", "health", "education", "other",
 ];
 
-export const INCOME_CATEGORIES = [
-  "salary",
-  "freelance",
-  "investment",
-  "other",
+export const INCOME_CATEGORIES: Category[] = [
+  "salary", "freelance", "investment", "other",
 ];
 
-export const CATEGORY_ICONS: Record<string, string> = {
+export const CATEGORY_ICONS: Record<Category, string> = {
   food: "🍔",
   rent: "🏠",
   transport: "🚗",
@@ -49,7 +53,7 @@ export const CATEGORY_ICONS: Record<string, string> = {
   other: "📌",
 };
 
-export const CATEGORY_COLORS: Record<string, string> = {
+export const CATEGORY_COLORS: Record<Category, string> = {
   food: "#3B82F6",
   rent: "#6366F1",
   transport: "#F59E0B",
@@ -66,27 +70,22 @@ export const CATEGORY_COLORS: Record<string, string> = {
 
 /* ================= API ================= */
 
-const API = "https://expense-backend-37bi.onrender.com";
+// ✅ FIX: ONLY ONE API DECLARATION
+const API = import.meta.env.VITE_API_URL;
 
 /* ================= TRANSACTIONS ================= */
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // FETCH
   const fetchData = async () => {
     try {
       const res = await fetch(`${API}/api/expenses`);
       const data = await res.json();
 
-      // ✅ FIXED (NO CRASH)
       const fixed = data.map((t: any) => ({
+        ...t,
         id: t._id,
-        amount: t.amount,
-        category: t.category || "other",
-        type: t.type,
-        date: t.date,
-        notes: t.notes || "",
       }));
 
       setTransactions(fixed);
@@ -99,7 +98,6 @@ export function useTransactions() {
     fetchData();
   }, []);
 
-  // ADD
   const addTransaction = async (tx: Omit<Transaction, "id">) => {
     try {
       const res = await fetch(`${API}/api/expenses`, {
@@ -113,14 +111,7 @@ export function useTransactions() {
       const newTx = await res.json();
 
       setTransactions((prev) => [
-        {
-          id: newTx._id,
-          amount: newTx.amount,
-          category: newTx.category,
-          type: newTx.type,
-          date: newTx.date,
-          notes: newTx.notes || "",
-        },
+        { ...newTx, id: newTx._id },
         ...prev,
       ]);
     } catch (err) {
@@ -128,7 +119,6 @@ export function useTransactions() {
     }
   };
 
-  // DELETE
   const deleteTransaction = async (id: string) => {
     try {
       await fetch(`${API}/api/expenses/${id}`, {
@@ -143,7 +133,6 @@ export function useTransactions() {
     }
   };
 
-  // UPDATE
   const updateTransaction = async (
     id: string,
     data: Partial<Transaction>
@@ -161,16 +150,7 @@ export function useTransactions() {
 
       setTransactions((prev) =>
         prev.map((t) =>
-          t.id === id
-            ? {
-                id,
-                amount: updated.amount,
-                category: updated.category,
-                type: updated.type,
-                date: updated.date,
-                notes: updated.notes || "",
-              }
-            : t
+          t.id === id ? { ...updated, id } : t
         )
       );
     } catch (err) {
@@ -190,7 +170,7 @@ export function useTransactions() {
 
 export interface Budget {
   id: string;
-  category: string;
+  category: Category;
   limit: number;
   month: string;
 }
@@ -198,26 +178,53 @@ export interface Budget {
 export function useBudgets() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
 
-  const addBudget = (bg: Omit<Budget, "id">) => {
+  const fetchBudgets = async () => {
+    const res = await fetch(`${API}/api/budgets`);
+    const data = await res.json();
+
+    const fixed = data.map((b: any) => ({
+      id: b._id,
+      category: b.category,
+      limit: b.limit,
+      month: b.month,
+    }));
+
+    setBudgets(fixed);
+  };
+
+  useEffect(() => {
+    fetchBudgets();
+  }, []);
+
+  const addBudget = async (bg: Omit<Budget, "id">) => {
+    const res = await fetch(`${API}/api/budgets`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bg),
+    });
+
+    const newBg = await res.json();
+
     setBudgets((prev) => [
+      {
+        id: newBg._id,
+        category: newBg.category,
+        limit: newBg.limit,
+        month: newBg.month,
+      },
       ...prev,
-      { ...bg, id: `b-${Date.now()}` },
     ]);
   };
 
-  const updateBudget = (id: string, data: Partial<Budget>) => {
-    setBudgets((prev) =>
-      prev.map((b) =>
-        b.id === id ? { ...b, ...data } : b
-      )
-    );
+  const deleteBudget = async (id: string) => {
+    await fetch(`${API}/api/budgets/${id}`, {
+      method: "DELETE",
+    });
+
+    setBudgets((prev) => prev.filter((b) => b.id !== id));
   };
 
-  const deleteBudget = (id: string) => {
-    setBudgets((prev) =>
-      prev.filter((b) => b.id !== id)
-    );
-  };
-
-  return { budgets, addBudget, updateBudget, deleteBudget };
+  return { budgets, addBudget, deleteBudget };
 }
