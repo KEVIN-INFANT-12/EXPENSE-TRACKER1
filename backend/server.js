@@ -2,12 +2,14 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import budgetRoutes from "./routes/budgetRoutes.js";
-app.use("/api/budgets", budgetRoutes);
 
-const app = express();
+const app = express(); // ✅ MUST COME BEFORE app.use
 
 app.use(cors());
 app.use(express.json());
+
+// ✅ FIXED POSITION
+app.use("/api/budgets", budgetRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
@@ -46,13 +48,13 @@ app.post("/api/expenses", async (req, res) => {
   res.json(newData);
 });
 
-// DELETE ✅ FIXED
+// DELETE
 app.delete("/api/expenses/:id", async (req, res) => {
   await Transaction.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 });
 
-// UPDATE ✅ FIXED
+// UPDATE
 app.put("/api/expenses/:id", async (req, res) => {
   const updated = await Transaction.findByIdAndUpdate(
     req.params.id,
