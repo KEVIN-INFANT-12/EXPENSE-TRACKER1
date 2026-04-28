@@ -1,4 +1,13 @@
 import { useTransactions } from "@/lib/store";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 export default function Dashboard() {
   const { transactions } = useTransactions();
@@ -21,7 +30,7 @@ export default function Dashboard() {
   > = {};
 
   transactions.forEach((t) => {
-    const d = new Date(t.date); // ✅ IMPORTANT FIX
+    const d = new Date(t.date);
 
     const month = d.toLocaleString("default", {
       month: "short",
@@ -39,7 +48,6 @@ export default function Dashboard() {
     }
   });
 
-  // Convert to array
   const chartData = Object.keys(monthlyData).map((month) => ({
     month,
     income: monthlyData[month].income,
@@ -72,19 +80,22 @@ export default function Dashboard() {
 
       </div>
 
-      {/* CHART DATA DEBUG (TEMP) */}
+      {/* BAR CHART */}
       <div className="bg-white shadow rounded-xl p-5">
         <h2 className="text-xl font-semibold mb-4">
-          Monthly Data (Debug)
+          Monthly Income vs Expense
         </h2>
 
-        {chartData.map((c, i) => (
-          <div key={i} className="flex justify-between border-b py-2">
-            <span>{c.month}</span>
-            <span>Income: ₹{c.income}</span>
-            <span>Expense: ₹{c.expense}</span>
-          </div>
-        ))}
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartData}>
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="income" />
+            <Bar dataKey="expense" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* RECENT */}
