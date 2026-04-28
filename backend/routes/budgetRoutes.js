@@ -1,19 +1,31 @@
 import express from "express";
-import Budget from "../models/Budget.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
+// ✅ DEFINE MODEL HERE (no import issues)
+const budgetSchema = new mongoose.Schema({
+  category: String,
+  limit: Number,
+  month: String,
+});
+
+const Budget = mongoose.models.Budget || mongoose.model("Budget", budgetSchema);
+
+// GET
 router.get("/", async (req, res) => {
-  const budgets = await Budget.find();
-  res.json(budgets);
+  const data = await Budget.find();
+  res.json(data);
 });
 
+// POST
 router.post("/", async (req, res) => {
-  const budget = new Budget(req.body);
-  await budget.save();
-  res.json(budget);
+  const newData = new Budget(req.body);
+  await newData.save();
+  res.json(newData);
 });
 
+// DELETE
 router.delete("/:id", async (req, res) => {
   await Budget.findByIdAndDelete(req.params.id);
   res.json({ success: true });
