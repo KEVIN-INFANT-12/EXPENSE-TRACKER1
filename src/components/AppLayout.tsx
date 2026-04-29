@@ -15,6 +15,9 @@ export function AppLayout() {
             <SidebarTrigger className="mr-4" />
 
             <div className="flex-1" />
+            <span className="mr-4 text-sm text-gray-500">
+  Logged in
+</span>
 
             {/* ✅ LOGOUT BUTTON */}
             <button
