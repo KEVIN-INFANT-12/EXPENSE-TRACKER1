@@ -74,9 +74,6 @@ export const CATEGORY_COLORS: Record<Category, string> = {
 
 const API = import.meta.env.VITE_API_URL;
 
-// 🔥 DEBUG (DO NOT REMOVE UNTIL FIXED)
-console.log("🚀 API URL:", API);
-
 /* ================= TRANSACTIONS ================= */
 
 export function useTransactions() {
@@ -84,7 +81,14 @@ export function useTransactions() {
 
   const fetchData = async () => {
     try {
-      const res = await fetch(`${API}/api/expenses`);
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${API}/api/expenses`, {
+        headers: {
+          Authorization: token || "",
+        },
+      });
+
       const data = await res.json();
 
       const fixed = data.map((t: any) => ({
@@ -104,10 +108,13 @@ export function useTransactions() {
 
   const addTransaction = async (tx: Omit<Transaction, "id">) => {
     try {
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`${API}/api/expenses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: token || "",
         },
         body: JSON.stringify(tx),
       });
@@ -125,8 +132,13 @@ export function useTransactions() {
 
   const deleteTransaction = async (id: string) => {
     try {
+      const token = localStorage.getItem("token");
+
       await fetch(`${API}/api/expenses/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: token || "",
+        },
       });
 
       setTransactions((prev) =>
@@ -142,10 +154,13 @@ export function useTransactions() {
     data: Partial<Transaction>
   ) => {
     try {
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`${API}/api/expenses/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: token || "",
         },
         body: JSON.stringify(data),
       });
@@ -184,7 +199,14 @@ export function useBudgets() {
 
   const fetchBudgets = async () => {
     try {
-      const res = await fetch(`${API}/api/budgets`);
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${API}/api/budgets`, {
+        headers: {
+          Authorization: token || "",
+        },
+      });
+
       const data = await res.json();
 
       const fixed = data.map((b: any) => ({
@@ -206,10 +228,13 @@ export function useBudgets() {
 
   const addBudget = async (bg: Omit<Budget, "id">) => {
     try {
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`${API}/api/budgets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: token || "",
         },
         body: JSON.stringify(bg),
       });
@@ -232,8 +257,13 @@ export function useBudgets() {
 
   const deleteBudget = async (id: string) => {
     try {
+      const token = localStorage.getItem("token");
+
       await fetch(`${API}/api/budgets/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: token || "",
+        },
       });
 
       setBudgets((prev) => prev.filter((b) => b.id !== id));

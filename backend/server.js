@@ -3,10 +3,11 @@ import mongoose from "mongoose";
 import cors from "cors";
 import budgetRoutes from "./routes/budgetRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import auth from "./middleware/auth.js"; // ✅ ADDED
 
 const app = express();
 
-// 🔥 DEBUG LOG (to confirm correct file is running)
+// 🔥 DEBUG LOG
 console.log("SERVER FILE LOADED 🚀");
 
 // MIDDLEWARE
@@ -38,38 +39,52 @@ const transactionSchema = new mongoose.Schema({
   category: String,
   notes: String,
   date: String,
-  userId: String,
+  userId: String, // already present ✅
 });
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
-// EXPENSE ROUTES
-app.get("/api/expenses", async (req, res) => {
+// ================= EXPENSE ROUTES =================
+
+// GET (only user data)
+app.get("/api/expenses", auth, async (req, res) => {
   try {
-    const data = await Transaction.find();
+    const data = await Transaction.find({ userId: req.user.id }); // ✅ FILTER
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post("/api/expenses", async (req, res) => {
-  const newData = new Transaction(req.body);
+// POST (attach userId)
+app.post("/api/expenses", auth, async (req, res) => {
+  const newData = new Transaction({
+    ...req.body,
+    userId: req.user.id, // ✅ ADD USER
+  });
+
   await newData.save();
   res.json(newData);
 });
 
-app.delete("/api/expenses/:id", async (req, res) => {
-  await Transaction.findByIdAndDelete(req.params.id);
+// DELETE (only own data)
+app.delete("/api/expenses/:id", auth, async (req, res) => {
+  await Transaction.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user.id,
+  });
+
   res.json({ message: "Deleted" });
 });
 
-app.put("/api/expenses/:id", async (req, res) => {
-  const updated = await Transaction.findByIdAndUpdate(
-    req.params.id,
+// UPDATE (only own data)
+app.put("/api/expenses/:id", auth, async (req, res) => {
+  const updated = await Transaction.findOneAndUpdate(
+    { _id: req.params.id, userId: req.user.id },
     req.body,
     { new: true }
   );
+
   res.json(updated);
 });
 
@@ -78,4 +93,4 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-}); 
+});
