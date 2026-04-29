@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import budgetRoutes from "./routes/budgetRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
@@ -11,6 +12,7 @@ console.log("SERVER FILE LOADED 🚀");
 // MIDDLEWARE
 app.use(cors());
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
 // ROUTES
 app.use("/api/budgets", budgetRoutes);

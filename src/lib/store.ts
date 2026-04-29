@@ -38,6 +38,8 @@ export const INCOME_CATEGORIES: Category[] = [
   "salary", "freelance", "investment", "other",
 ];
 
+/* ================= CATEGORY UI ================= */
+
 export const CATEGORY_ICONS: Record<Category, string> = {
   food: "🍔",
   rent: "🏠",
@@ -70,8 +72,10 @@ export const CATEGORY_COLORS: Record<Category, string> = {
 
 /* ================= API ================= */
 
-// ✅ FIX: ONLY ONE API DECLARATION
 const API = import.meta.env.VITE_API_URL;
+
+// 🔥 DEBUG (DO NOT REMOVE UNTIL FIXED)
+console.log("🚀 API URL:", API);
 
 /* ================= TRANSACTIONS ================= */
 
@@ -179,17 +183,21 @@ export function useBudgets() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
 
   const fetchBudgets = async () => {
-    const res = await fetch(`${API}/api/budgets`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`${API}/api/budgets`);
+      const data = await res.json();
 
-    const fixed = data.map((b: any) => ({
-      id: b._id,
-      category: b.category,
-      limit: b.limit,
-      month: b.month,
-    }));
+      const fixed = data.map((b: any) => ({
+        id: b._id,
+        category: b.category,
+        limit: b.limit,
+        month: b.month,
+      }));
 
-    setBudgets(fixed);
+      setBudgets(fixed);
+    } catch (err) {
+      console.error("BUDGET FETCH ERROR:", err);
+    }
   };
 
   useEffect(() => {
@@ -197,34 +205,46 @@ export function useBudgets() {
   }, []);
 
   const addBudget = async (bg: Omit<Budget, "id">) => {
-    const res = await fetch(`${API}/api/budgets`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(bg),
-    });
+    try {
+      const res = await fetch(`${API}/api/budgets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(bg),
+      });
 
-    const newBg = await res.json();
+      const newBg = await res.json();
 
-    setBudgets((prev) => [
-      {
-        id: newBg._id,
-        category: newBg.category,
-        limit: newBg.limit,
-        month: newBg.month,
-      },
-      ...prev,
-    ]);
+      setBudgets((prev) => [
+        {
+          id: newBg._id,
+          category: newBg.category,
+          limit: newBg.limit,
+          month: newBg.month,
+        },
+        ...prev,
+      ]);
+    } catch (err) {
+      console.error("BUDGET ADD ERROR:", err);
+    }
   };
 
   const deleteBudget = async (id: string) => {
-    await fetch(`${API}/api/budgets/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      await fetch(`${API}/api/budgets/${id}`, {
+        method: "DELETE",
+      });
 
-    setBudgets((prev) => prev.filter((b) => b.id !== id));
+      setBudgets((prev) => prev.filter((b) => b.id !== id));
+    } catch (err) {
+      console.error("BUDGET DELETE ERROR:", err);
+    }
   };
 
-  return { budgets, addBudget, deleteBudget };
+  return {
+    budgets,
+    addBudget,
+    deleteBudget,
+  };
 }
